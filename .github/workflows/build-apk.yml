@@ -1,0 +1,37 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # 若 requirements.txt 里没写 flet CLI，可加一行：
+          # pip install flet
+
+      - name: Build APK
+        run: |
+          flet build apk --project-name VoiceGenerator --org com.hachitaro.voicegenerator
+        # 如果需要自定义参数（例如 split per abi），这里加到命令后面
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoiceGenerator
+          path: build/**/android/*.apk
