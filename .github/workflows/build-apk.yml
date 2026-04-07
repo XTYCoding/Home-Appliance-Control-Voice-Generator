@@ -27,7 +27,7 @@ jobs:
 
       - name: Build APK
         run: |
-          flet build apk --project-name VoiceGenerator --org com.hachitaro.voicegenerator
+          flet build apk --project VoiceGenerator --org com.hachitaro.voicegenerator
         # 如果需要自定义参数（例如 split per abi），这里加到命令后面
 
       - name: Upload APK artifact
