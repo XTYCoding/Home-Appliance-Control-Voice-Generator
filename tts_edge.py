@@ -9,7 +9,6 @@ import hashlib
 from pathlib import Path
 
 import edge_tts
-import pygame
 
 # 中文女声；可改为 zh-CN-YunxiNeural、zh-CN-YunyangNeural 等
 DEFAULT_VOICE = "zh-CN-XiaoxiaoNeural"
@@ -32,20 +31,6 @@ async def _synthesize_to_file(text: str, voice: str, out_path: str) -> None:
     await communicate.save(out_path)
 
 
-def _play_mp3(path: str) -> None:
-    if pygame.mixer.get_init() is None:
-        pygame.mixer.init()
-    try:
-        pygame.mixer.music.load(path)
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            pygame.time.delay(100)
-    finally:
-        pygame.mixer.music.stop()
-        if hasattr(pygame.mixer.music, "unload"):
-            pygame.mixer.music.unload()
-
-
 def ensure_mp3_cached(phrase: str, voice: str = DEFAULT_VOICE) -> Path:
     """
     若缓存文件不存在则请求 Edge TTS 并写入 audio_cache。
@@ -61,10 +46,10 @@ def ensure_mp3_cached(phrase: str, voice: str = DEFAULT_VOICE) -> Path:
     return path
 
 
-def play_phrase(phrase: str, voice: str = DEFAULT_VOICE) -> bool:
+def ensure_and_get_path(phrase: str, voice: str = DEFAULT_VOICE) -> tuple[Path, bool]:
     """
-    播放一条语音：优先使用缓存；无缓存则合成并写入缓存再播放。
-    返回 True 表示使用了已存在的缓存文件，False 表示刚生成。
+    返回 (缓存文件路径, 是否命中缓存)。
+    若无缓存则先合成并写入缓存。
     """
     phrase = phrase.strip()
     if not phrase:
@@ -73,8 +58,7 @@ def play_phrase(phrase: str, voice: str = DEFAULT_VOICE) -> bool:
     cache_hit = path.is_file()
     if not cache_hit:
         asyncio.run(_synthesize_to_file(phrase, voice, str(path)))
-    _play_mp3(str(path))
-    return cache_hit
+    return path, cache_hit
 
 
 def warm_cache(appliances: list[dict], voice: str = DEFAULT_VOICE) -> tuple[int, int]:
@@ -123,5 +107,5 @@ def prune_stale_cache(appliances: list[dict], voice: str = DEFAULT_VOICE) -> int
 
 
 def synthesize_and_play(phrase: str, voice: str = DEFAULT_VOICE) -> None:
-    """兼容旧接口：等价于 play_phrase（含缓存逻辑）。"""
-    play_phrase(phrase, voice)
+    """已弃用：仅保留兼容。"""
+    ensure_and_get_path(phrase, voice)
