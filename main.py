@@ -69,8 +69,8 @@ def main(page: ft.Page) -> None:
         appliances.append(new_appliance("示例：客厅灯"))
         appliances[0]["commands"].extend(
             [
-                new_command("关灯", "小爱小爱，关灯"),
-                new_command("开灯", "小爱小爱，开灯"),
+                new_command("关灯", "关灯"),
+                new_command("开灯", "开灯"),
             ]
         )
 
@@ -93,30 +93,12 @@ def main(page: ft.Page) -> None:
     bottom_nav.on_change = on_nav_change
 
     page.navigation_bar = bottom_nav
-    # rail = ft.NavigationRail(
-    #     selected_index=0,
-    #     label_type=ft.NavigationRailLabelType.ALL,
-    #     min_width=96,
-    #     min_extended_width=180,
-    #     group_alignment=-0.9,
-    #     destinations=[
-    #         ft.NavigationRailDestination(
-    #             icon=ft.Icons.SETTINGS,
-    #             selected_icon=ft.Icons.SETTINGS,
-    #             label="配置",
-    #         ),
-    #         ft.NavigationRailDestination(
-    #             icon=ft.Icons.MIC,
-    #             selected_icon=ft.Icons.MIC,
-    #             label="使用",
-    #         ),
-    #     ],
-    # )
 
     use_dropdown = ft.Ref[ft.Dropdown]()
     use_commands_column = ft.Ref[ft.Column]()
-    audio = fta.Audio(autoplay=False, volume=1.0)
-    page.services.append(audio)
+
+    # 音频播放器
+
 
     def persist() -> None:
         save_config(appliances)
@@ -272,26 +254,19 @@ def main(page: ft.Page) -> None:
                 show_message(page, f"TTS 失败：{ex}")
                 return
 
-            if page.platform == ft.PagePlatform.WINDOWS:
-                try:
-                    os.startfile(str(path))  # type: ignore[attr-defined]
-                except Exception as ex:
-                    show_message(page, f"系统播放器失败：{ex}")
-                    print(f"[Edge TTS] 系统播放器失败：{ex!r}")
-                    return
-                print(f"[Edge TTS] 已播放(Windows系统) {'(缓存)' if hit else '(新生成)'}：{phrase!r}")
-                return
-
             try:
-                # Use file URI for better compatibility with audio backends.
                  # 1. 在 Android 上直接传入字符串绝对路径是最稳的
-                audio.src = str(path.resolve()) 
-                # 2. 通知前台 UI 更新音频源
-                page.update() 
-                # 3. 给 Flutter 底层引擎一点点加载文件的时间（极其重要）
-                await asyncio.sleep(0.1) 
-                # 4. 直接调用 play()！不需要 await，不需要 wait_for！
-                audio.play() 
+                # audio.src = "https://github.com/mdn/webaudio-examples/blob/main/audio-analyser/viper.mp3?raw=true"
+                audio = fta.Audio(
+                    src = str(path.resolve()),
+                    autoplay=True,
+                    volume=1,
+                    balance=0,
+                    release_mode=fta.ReleaseMode.RELEASE,)
+                # await asyncio.sleep(0.5)
+                print(f"[Edge TTS] 音频源：{audio.src}")
+                page.services.append(audio)
+                # await audio.play() 
 
             except Exception as play_ex:
                 show_message(page, f"播放失败：{play_ex}")
@@ -371,12 +346,6 @@ def main(page: ft.Page) -> None:
         page.update()
         rebuild_buttons(dd.value)
 
-    # def on_rail_change(e: ft.ControlEvent) -> None:
-    #     idx = e.control.selected_index
-    #     if idx == 0:
-    #         refresh_config_panel()
-    #     else:
-    #         refresh_use_panel()
 
 
     page.add(right)
