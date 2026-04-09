@@ -51,7 +51,7 @@ def show_message(page: ft.Page, text: str) -> None:
     page.show_dialog(
         ft.SnackBar(
             content=ft.Text(text),
-            duration=ft.Duration(milliseconds=3000),
+            duration=ft.Duration(milliseconds=1000),
         )
     )
 
@@ -75,25 +75,43 @@ def main(page: ft.Page) -> None:
         )
 
     right = ft.Container(expand=True, padding=24)
-    rail = ft.NavigationRail(
+    bottom_nav = ft.NavigationBar(
         selected_index=0,
-        label_type=ft.NavigationRailLabelType.ALL,
-        min_width=96,
-        min_extended_width=180,
-        group_alignment=-0.9,
         destinations=[
-            ft.NavigationRailDestination(
-                icon=ft.Icons.SETTINGS,
-                selected_icon=ft.Icons.SETTINGS,
-                label="配置",
-            ),
-            ft.NavigationRailDestination(
-                icon=ft.Icons.MIC,
-                selected_icon=ft.Icons.MIC,
-                label="使用",
-            ),
+            ft.NavigationBarDestination(icon=ft.Icons.SETTINGS, label="配置"),
+            ft.NavigationBarDestination(icon=ft.Icons.MIC, label="使用"),
         ],
     )
+
+    def on_nav_change(e: ft.ControlEvent) -> None:
+        idx = e.control.selected_index
+        if idx == 0:
+            refresh_config_panel()
+        else:
+            refresh_use_panel()
+
+    bottom_nav.on_change = on_nav_change
+
+    page.navigation_bar = bottom_nav
+    # rail = ft.NavigationRail(
+    #     selected_index=0,
+    #     label_type=ft.NavigationRailLabelType.ALL,
+    #     min_width=96,
+    #     min_extended_width=180,
+    #     group_alignment=-0.9,
+    #     destinations=[
+    #         ft.NavigationRailDestination(
+    #             icon=ft.Icons.SETTINGS,
+    #             selected_icon=ft.Icons.SETTINGS,
+    #             label="配置",
+    #         ),
+    #         ft.NavigationRailDestination(
+    #             icon=ft.Icons.MIC,
+    #             selected_icon=ft.Icons.MIC,
+    #             label="使用",
+    #         ),
+    #     ],
+    # )
 
     use_dropdown = ft.Ref[ft.Dropdown]()
     use_commands_column = ft.Ref[ft.Column]()
@@ -266,10 +284,15 @@ def main(page: ft.Page) -> None:
 
             try:
                 # Use file URI for better compatibility with audio backends.
-                audio.src = path.resolve().as_uri()
-                page.update()
-                await asyncio.sleep(0.05)
-                await asyncio.wait_for(audio.play(), timeout=8)
+                 # 1. 在 Android 上直接传入字符串绝对路径是最稳的
+                audio.src = str(path.resolve()) 
+                # 2. 通知前台 UI 更新音频源
+                page.update() 
+                # 3. 给 Flutter 底层引擎一点点加载文件的时间（极其重要）
+                await asyncio.sleep(0.1) 
+                # 4. 直接调用 play()！不需要 await，不需要 wait_for！
+                audio.play() 
+
             except Exception as play_ex:
                 show_message(page, f"播放失败：{play_ex}")
                 print(f"[Edge TTS] flet-audio 播放失败：{play_ex!r}")
@@ -348,21 +371,15 @@ def main(page: ft.Page) -> None:
         page.update()
         rebuild_buttons(dd.value)
 
-    def on_rail_change(e: ft.ControlEvent) -> None:
-        idx = e.control.selected_index
-        if idx == 0:
-            refresh_config_panel()
-        else:
-            refresh_use_panel()
+    # def on_rail_change(e: ft.ControlEvent) -> None:
+    #     idx = e.control.selected_index
+    #     if idx == 0:
+    #         refresh_config_panel()
+    #     else:
+    #         refresh_use_panel()
 
-    rail.on_change = on_rail_change
 
-    page.add(
-        ft.Row(
-            [rail, ft.VerticalDivider(width=1), right],
-            expand=True,
-        )
-    )
+    page.add(right)
     refresh_config_panel()
 
 
