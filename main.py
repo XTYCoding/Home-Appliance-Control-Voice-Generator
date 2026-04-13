@@ -98,7 +98,12 @@ def main(page: ft.Page) -> None:
     use_commands_column = ft.Ref[ft.Column]()
 
     # 音频播放器
-
+    audio = fta.Audio(
+            autoplay=False,
+            volume=1,
+            balance=0,
+            release_mode=fta.ReleaseMode.RELEASE,)
+    page.services.append(audio)
 
     def persist() -> None:
         save_config(appliances)
@@ -259,17 +264,13 @@ def main(page: ft.Page) -> None:
             try:
                  # 1. 在 Android 上直接传入字符串绝对路径是最稳的
                 # audio.src = "https://github.com/mdn/webaudio-examples/blob/main/audio-analyser/viper.mp3?raw=true"
-                file_uri = path.resolve().as_uri()
-                audio = fta.Audio(
-                    src = str(file_uri),
-                    autoplay=True,
-                    volume=1,
-                    balance=0,
-                    release_mode=fta.ReleaseMode.RELEASE,)
+                if page.platform == ft.PagePlatform.WINDOWS:
+                    os.startfile(str(path))
+                path = path.resolve().as_uri()
+                audio.src = path
                 # await asyncio.sleep(0.5)
                 print(f"[Edge TTS] 音频源：{audio.src}")
-                page.services.append(audio)
-                # await audio.play() 
+                await audio.play() 
 
             except Exception as play_ex:
                 show_message(page, f"播放失败：{play_ex}")
