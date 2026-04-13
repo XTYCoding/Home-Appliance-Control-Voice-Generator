@@ -243,22 +243,25 @@ def main(page: ft.Page) -> None:
             show_message(page, "语音文案为空，请在配置页填写。")
             return
 
-        show_message(page, "正在准备语音…")
+        # show_message(page, "正在准备语音…")
 
         async def run_tts_flow() -> None:
             try:
                 print(f"[Edge TTS] 开始准备：{phrase!r}")
                 path, hit = await asyncio.to_thread(tts_edge.ensure_and_get_path, phrase)
-                print(f"[Edge TTS] 缓存文件：{path}；命中={hit}")
+                # print(f"[Edge TTS] 缓存文件：{path}；命中={hit}")
+                show_message(page, f"缓存文件：{path}；命中={hit}")
             except Exception as ex:
+                # show_message(page, "生成语音失败")
                 show_message(page, f"TTS 失败：{ex}")
                 return
 
             try:
                  # 1. 在 Android 上直接传入字符串绝对路径是最稳的
                 # audio.src = "https://github.com/mdn/webaudio-examples/blob/main/audio-analyser/viper.mp3?raw=true"
+                file_uri = path.resolve().as_uri()
                 audio = fta.Audio(
-                    src = str(path.resolve()),
+                    src = str(file_uri),
                     autoplay=True,
                     volume=1,
                     balance=0,
