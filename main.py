@@ -262,11 +262,11 @@ def main(page: ft.Page) -> None:
                 return
 
             try:
-                 # 1. 在 Android 上直接传入字符串绝对路径是最稳的
-                # audio.src = "https://github.com/mdn/webaudio-examples/blob/main/audio-analyser/viper.mp3?raw=true"
-                #@if page.platform == ft.PagePlatform.WINDOWS:
-                os.startfile(str(path))
-                path = path.resolve().as_uri()
+                if  page.platform == ft.PagePlatform.ANDROID:
+                    audio.src = str(path)
+                else:
+                    os.startfile(str(path))
+                    path = path.resolve().as_uri()
                 audio.src = path
                 # await asyncio.sleep(0.5)
                 print(f"[Edge TTS] 音频源：{audio.src}")
