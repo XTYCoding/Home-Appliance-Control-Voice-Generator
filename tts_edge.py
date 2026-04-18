@@ -13,12 +13,12 @@ import edge_tts
 # 中文女声；可改为 zh-CN-YunxiNeural、zh-CN-YunyangNeural 等
 DEFAULT_VOICE = "zh-CN-XiaoxiaoNeural"
 
-CACHE_DIR = Path(__file__).resolve().parent / "audio_cache"
+CACHE_DIR = Path(__file__).resolve().parent / "asset"
 
 
 def _cache_key(phrase: str, voice: str) -> str:
     payload = f"{voice}\n{phrase.strip()}"
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return hashlib.md5(payload.encode("utf-8")).hexdigest()
 
 
 def cached_mp3_path(phrase: str, voice: str = DEFAULT_VOICE) -> Path:
